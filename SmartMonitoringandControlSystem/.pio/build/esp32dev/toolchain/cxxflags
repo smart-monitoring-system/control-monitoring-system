@@ -1,7 +1,0 @@
--Wno-frame-address
--mlongcalls
--fno-builtin-memcpy
--fno-builtin-memset
--fno-builtin-bzero
-"-specs=/Users/user/Documents/control-monitoring-system/SmartMonitoringandControlSystem/.pio/build/esp32dev/specs/picolibc.specs"
--fno-rtti
