@@ -1,0 +1,2 @@
+source /Users/user/Documents/control-monitoring-system/SmartMonitoringandControlSystem/.pio/build/esp32dev/gdbinit/symbols
+source /Users/user/Documents/control-monitoring-system/SmartMonitoringandControlSystem/.pio/build/esp32dev/gdbinit/connect
