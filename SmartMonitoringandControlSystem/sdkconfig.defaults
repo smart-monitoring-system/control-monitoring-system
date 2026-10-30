@@ -1,0 +1,2 @@
+# Match the 4 MB ESP32 Dev Module selected in platformio.ini.
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
