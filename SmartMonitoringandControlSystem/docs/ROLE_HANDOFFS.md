@@ -58,16 +58,23 @@ and door commands through integration.h when integrating.
 
 ## Role 3: both rooms
 
-Choose the room module's startup function and use two instances of the room logic.
+Implemented in `room_control.c` and `room_control_core.c`. Each room has a
+separate two-beam directional counter: A only -> both -> B only -> clear is an
+entry; the reverse sequence is an exit. Counts commit only after the final clear
+sample. The room task owns this count and its
+light output, while the pure core is host-tested. See `ROLE3_IMPLEMENTATION.md`
+for GPIO allocation, Wokwi controls, ambiguity handling, and restart recovery.
 
 Publish EVENT_ROOM_STATE with room_id 1 or 2, occupancy (UNKNOWN/EMPTY/OCCUPIED),
 and the actual light output state. The room module owns sensor interpretation and
 local lighting; the controller stores reported status. Building membership is not
 an input that automatically turns both room lights on.
 
-Define the occupancy method before coding: PIR timeout is an estimate; doorway
-counting requires handling reversals and missed/overlapping crossings. Publish
-UNKNOWN on sensor uncertainty/failure instead of claiming verified empty.
+Doorway-counting must treat reversals, stalls, missed beams and overlapping
+crossings as `UNKNOWN`, never as a guessed count. On restart, a logged-in staff
+member physically confirms the room is empty and its doorway clear, then runs
+`rooms reconcile <1|2>` before
+the relevant room may be considered empty.
 
 ## Role 4: schedules, auth, configuration, CLI
 

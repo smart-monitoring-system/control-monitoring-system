@@ -16,6 +16,7 @@
 #include "config.h"
 #include "serial_cli.h"
 #include "rfid.h"
+#include "room_control.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -449,6 +450,11 @@ void app_main(void)
     ESP_ERROR_CHECK(management_init());
 
     ESP_ERROR_CHECK(controller_start());
+
+#if !APP_ROLE1_DEMO
+    /* Rooms publish through the controller queue; start it first. */
+    ESP_ERROR_CHECK(room_control_start());
+#endif
 
     ESP_ERROR_CHECK(config_start_watcher());
 

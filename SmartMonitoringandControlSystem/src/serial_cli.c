@@ -7,6 +7,7 @@
 #include "config.h"
 #include "schedule.h"
 #include "controller.h"
+#include "room_control.h"
 #include "system_types.h"
 #include "driver/uart.h"
 #include "esp_err.h"
@@ -197,6 +198,7 @@ static void cmd_help(void)
     printf("  status                     overall system information\n");
     printf("  inside                     people inside the building\n");
     printf("  rooms                      state of the lecture rooms\n");
+    printf("  rooms reconcile <1|2>      confirm a physically empty room after a fault/restart (login needed)\n");
     printf("  logs                       access records\n");
     printf("  schedule show              show the opening hours\n");
     printf("  schedule set <open> <close>  change hours, e.g. schedule set 7 22 (login needed)\n");
@@ -345,8 +347,36 @@ static void cmd_inside(void)
     }
 }
 
-static void cmd_rooms(void)
+static void cmd_rooms(int argc, char *argv[])
 {
+    if (argc == 3 && strcmp(argv[1], "reconcile") == 0) {
+        int room_id = 0;
+        if (!parse_number(argv[2], &room_id) || room_id < 1 || room_id > SYSTEM_ROOM_COUNT) {
+            printf("Usage: rooms reconcile <1|2>\n");
+            return;
+        }
+        if (!auth_is_logged_in()) {
+            printf("Refused: please log in first.\n");
+            return;
+        }
+
+        esp_err_t err = room_control_reconcile_empty(
+            (uint8_t)room_id, pdMS_TO_TICKS(100)
+        );
+        if (err == ESP_OK) {
+            printf("Room %d reconciliation requested. Confirm both doorway beams are clear, then use rooms to verify the result.\n",
+                   room_id);
+        } else {
+            printf("Could not request reconciliation: %s\n", esp_err_to_name(err));
+        }
+        return;
+    }
+
+    if (argc != 1) {
+        printf("Usage: rooms   or   rooms reconcile <1|2>\n");
+        return;
+    }
+
     system_snapshot_t snapshot;
     if (controller_get_snapshot(&snapshot, pdMS_TO_TICKS(100)) != ESP_OK) {
         printf("Could not read the room state.\n");
@@ -456,7 +486,7 @@ static void run_command(int argc, char *argv[])
     } else if (strcmp(name, "inside") == 0) {
         cmd_inside();
     } else if (strcmp(name, "rooms") == 0) {
-        cmd_rooms();
+        cmd_rooms(argc, argv);
     } else if (strcmp(name, "logs") == 0) {
         cmd_logs();
     } else if (strcmp(name, "schedule") == 0) {
