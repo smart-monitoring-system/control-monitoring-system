@@ -15,3 +15,10 @@ subprocess.run(compiler + ["-std=c11", "-Wall", "-Wextra", "-Werror", "-pedantic
     str(root / "src/access_control.c"), str(root / "src/system_types.c"),
     "-o", str(build / "controller-tests")], check=True)
 subprocess.run([str(build / "controller-tests")], check=True)
+
+subprocess.run(compiler + ["-std=c11", "-Wall", "-Wextra", "-Werror", "-pedantic",
+    "-g", "-I", str(root / "src"),
+    str(root / "test/host/test_room_control_core.c"),
+    str(root / "src/room_control_core.c"), str(root / "src/system_types.c"),
+    "-o", str(build / "room-control-tests")], check=True)
+subprocess.run([str(build / "room-control-tests")], check=True)

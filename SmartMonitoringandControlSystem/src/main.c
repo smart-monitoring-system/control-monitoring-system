@@ -10,6 +10,7 @@
 #include "config.h"
 #include "serial_cli.h"
 #include "rfid.h"
+#include "room_control.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -111,10 +112,14 @@ void app_main(void)
     ESP_ERROR_CHECK(management_init());
     ESP_ERROR_CHECK(controller_start());
 
+#if !APP_ROLE1_DEMO
+    /* Role 3 owns independent room sensor interpretation and lighting. */
+    ESP_ERROR_CHECK(room_control_start());
+#endif
+
     ESP_ERROR_CHECK(config_start_watcher());
     ESP_ERROR_CHECK(serial_cli_start());
-    /* Add teammates' initialization here when their modules are integrated. */
-    ESP_LOGW("startup", "Role 1 only: hardware, management and SD modules are not integrated; console logs are not persisted.");
+    ESP_LOGW("startup", "Audit storage and restart persistence are not integrated; console logs are not persisted.");
 #if APP_ROLE1_DEMO
 
     ESP_ERROR_CHECK(role1_demo_start());

@@ -16,6 +16,8 @@ idf_component_register(
         "config.c"
         "serial_cli.c"
         "rfid.c"
+        "room_control.c"
+        "room_control_core.c"
 
     INCLUDE_DIRS
         "."
