@@ -1,6 +1,0 @@
--Wno-frame-address
--mlongcalls
--fno-builtin-memcpy
--fno-builtin-memset
--fno-builtin-bzero
-"-specs=C:/Users/paula/OneDrive/Desktop/embeddedsystems/control-monitoring-system/SmartMonitoringandControlSystem/build/specs/picolibc.specs"

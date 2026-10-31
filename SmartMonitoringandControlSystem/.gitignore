@@ -5,3 +5,6 @@ __pycache__/
 *.pyc
 sdkconfig.*.old
 sdkconfig.role1_demo
+build/
+.pio/
+sdkconfig
