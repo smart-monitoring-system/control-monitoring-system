@@ -13,6 +13,9 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "identity.h"
+#include "schedule.h"
+
 
 #if !APP_ROLE1_DEMO
 
@@ -27,6 +30,7 @@ static bool same_uid(
            memcmp(first->bytes, second->bytes, first->length) == 0;
 }
 
+
 static void entrance_rfid_task(void *argument)
 {
     rfid_reader_t *reader = (rfid_reader_t *)argument;
@@ -34,14 +38,73 @@ static void entrance_rfid_task(void *argument)
     system_uid_t previous_uid = {0};
     bool card_latched = false;
 
-    ESP_LOGI(TAG, "Present an RFID card at the entrance reader.");
+    /*
+     * Keep an event pending until the controller accepts it.
+     * Retrying uses the same event ID.
+     */
+    system_event_t pending_event = {0};
+    bool event_pending = false;
+
+    ESP_LOGI(
+        TAG,
+        "Present an RFID card at the entrance reader."
+    );
 
     while (1) {
+
+        /*
+         * STEP 1: Retry a pending event before reading
+         * another card.
+         */
+        if (event_pending) {
+
+            esp_err_t post_result = controller_post_event(
+                &pending_event,
+                pdMS_TO_TICKS(100)
+            );
+
+            if (post_result == ESP_OK) {
+
+                previous_uid = pending_event.data.scan.uid;
+                card_latched = true;
+                event_pending = false;
+
+                ESP_LOGI(
+                    TAG,
+                    "Entry scan successfully queued. Event ID=%lu",
+                    (unsigned long)pending_event.id
+                );
+
+            } else {
+
+                ESP_LOGE(
+                    TAG,
+                    "Could not queue entry event %lu: %s. Retrying.",
+                    (unsigned long)pending_event.id,
+                    esp_err_to_name(post_result)
+                );
+
+                vTaskDelay(pdMS_TO_TICKS(250));
+                continue;
+            }
+        }
+
+        /*
+         * STEP 2: Read the RFID card.
+         */
         system_uid_t current_uid = {0};
 
-        esp_err_t result = rfid_read_uid(reader, &current_uid);
+        esp_err_t result = rfid_read_uid(
+            reader,
+            &current_uid
+        );
 
         if (result == ESP_OK) {
+
+            /*
+             * Avoid generating repeated events while
+             * the same card remains on the reader.
+             */
             if (!card_latched ||
                 !same_uid(&previous_uid, &current_uid)) {
 
@@ -49,6 +112,7 @@ static void entrance_rfid_task(void *argument)
                 printf("RFID ENTRY: UID = ");
 
                 for (int i = 0; i < current_uid.length; i++) {
+
                     printf("%02X", current_uid.bytes[i]);
 
                     if (i < current_uid.length - 1) {
@@ -58,10 +122,10 @@ static void entrance_rfid_task(void *argument)
 
                 printf("\n--------------------------------\n");
 
-                previous_uid = current_uid;
-                card_latched = true;
-
-                system_event_t event = {
+                /*
+                 * STEP 3: Create an entry event.
+                 */
+                pending_event = (system_event_t) {
                     .id = controller_next_event_id(),
                     .type = EVENT_ACCESS_SCAN,
                     .data.scan = {
@@ -69,18 +133,22 @@ static void entrance_rfid_task(void *argument)
                         .direction = DIRECTION_ENTRY
                     }
                 };
-                result = controller_post_event(&event, pdMS_TO_TICKS(100));
-                if (result != ESP_OK) {
-                    ESP_LOGE(TAG, "Could not queue entry scan: %s",
-                             esp_err_to_name(result));
-                }
+
+                event_pending = true;
             }
         }
+
         else if (result == ESP_ERR_NOT_FOUND) {
-            /* No card detected: allow the next scan. */
+
+            /*
+             * No card detected.
+             * Allow the next scan to generate an event.
+             */
             card_latched = false;
         }
+
         else {
+
             ESP_LOGW(
                 TAG,
                 "RFID read error: %s",
@@ -107,9 +175,13 @@ void app_main(void)
     ESP_ERROR_CHECK(door_init());
 
     ESP_LOGI("startup", "Role 2 door outputs initialized.");
-
     ESP_ERROR_CHECK(management_init());
+
+    /* Initialize the building access schedule clock. */
+    ESP_ERROR_CHECK(schedule_init());
+
     ESP_ERROR_CHECK(controller_start());
+
 
     ESP_ERROR_CHECK(config_start_watcher());
     ESP_ERROR_CHECK(serial_cli_start());
