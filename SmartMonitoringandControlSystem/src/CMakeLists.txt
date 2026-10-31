@@ -11,6 +11,11 @@ idf_component_register(
         "role1_demo.c"
         "identity.c"
         "door.c"
+        "schedule.c"
+        "auth.c"
+        "config.c"
+        "serial_cli.c"
+        "rfid.c"
 
     INCLUDE_DIRS
         "."
