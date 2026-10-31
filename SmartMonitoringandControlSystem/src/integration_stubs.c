@@ -20,13 +20,6 @@ esp_err_t door_set_open(system_direction_t direction, bool open)
     return ESP_ERR_NOT_SUPPORTED;
 }
 
-esp_err_t schedule_access_allowed(system_direction_t direction, bool *allowed)
-{
-    if (!allowed || (direction != DIRECTION_ENTRY && direction != DIRECTION_EXIT)) return ESP_ERR_INVALID_ARG;
-    *allowed = false;
-    return ESP_ERR_NOT_SUPPORTED;
-}
-
 esp_err_t storage_queue_record(const system_audit_record_t *record)
 {
     if (!record) return ESP_ERR_INVALID_ARG;
