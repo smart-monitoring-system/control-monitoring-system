@@ -1,14 +1,95 @@
+
 {
   "version": 1,
-  "author": "CoCIS single-controller scaffold",
+  "author": "CoCIS Smart Control and Monitoring System",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} }
-  }
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "board-mfrc522",
+      "id": "rfid_entry",
+      "top": -130,
+      "left": -250,
+      "attrs": {}
+    },
+    {
+      "type": "board-mfrc522",
+      "id": "rfid_exit",
+      "top": 120,
+      "left": -250,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "entry_led",
+      "top": -100,
+      "left": 300,
+      "attrs": {
+        "color": "green"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "exit_led",
+      "top": 100,
+      "left": 300,
+      "attrs": {
+        "color": "red"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": -65,
+      "left": 230,
+      "attrs": {
+        "value": "220"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": 135,
+      "left": 230,
+      "attrs": {
+        "value": "220"
+      }
+    }
   ],
   "connections": [
-    [ "esp:TX", "$serialMonitor:RX", "", [] ],
-    [ "esp:RX", "$serialMonitor:TX", "", [] ]
+    ["esp:TX", "$serialMonitor:RX", "", []],
+    ["esp:RX", "$serialMonitor:TX", "", []],
+
+    ["esp:18", "rfid_entry:SCK", "green", []],
+    ["esp:19", "rfid_entry:MISO", "blue", []],
+    ["esp:23", "rfid_entry:MOSI", "orange", []],
+    ["esp:5", "rfid_entry:SDA", "yellow", []],
+    ["esp:22", "rfid_entry:RST", "purple", []],
+    ["esp:3V3", "rfid_entry:3.3V", "red", []],
+    ["esp:GND.1", "rfid_entry:GND", "black", []],
+
+    ["esp:18", "rfid_exit:SCK", "green", []],
+    ["esp:19", "rfid_exit:MISO", "blue", []],
+    ["esp:23", "rfid_exit:MOSI", "orange", []],
+    ["esp:17", "rfid_exit:SDA", "yellow", []],
+    ["esp:22", "rfid_exit:RST", "purple", []],
+    ["esp:3V3", "rfid_exit:3.3V", "red", []],
+    ["esp:GND.1", "rfid_exit:GND", "black", []],
+
+    ["esp:25", "r1:1", "green", []],
+    ["r1:2", "entry_led:A", "green", []],
+    ["entry_led:C", "esp:GND.1", "black", []],
+
+    ["esp:26", "r2:1", "red", []],
+    ["r2:2", "exit_led:A", "red", []],
+    ["exit_led:C", "esp:GND.1", "black", []]
   ],
   "dependencies": {}
 }
+
