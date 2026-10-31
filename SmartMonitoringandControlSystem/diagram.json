@@ -1,261 +1,78 @@
-
 {
   "version": 1,
   "author": "CoCIS Smart Control and Monitoring System",
   "editor": "wokwi",
   "parts": [
-    {
-      "type": "board-esp32-devkit-c-v4",
-      "id": "esp",
-      "top": 0,
-      "left": 0,
-      "attrs": {}
-    },
-    {
-      "type": "board-mfrc522",
-      "id": "rfid_entry",
-      "top": -160,
-      "left": -280,
-      "attrs": {}
-    },
-    {
-      "type": "board-mfrc522",
-      "id": "rfid_exit",
-      "top": 130,
-      "left": -280,
-      "attrs": {}
-    },
-    {
-      "type": "wokwi-servo",
-      "id": "entry_servo",
-      "top": -180,
-      "left": 300,
-      "attrs": {}
-    },
-    {
-      "type": "wokwi-servo",
-      "id": "exit_servo",
-      "top": 100,
-      "left": 300,
-      "attrs": {}
-    },
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "board-mfrc522", "id": "rfid_entry", "top": -185.05, "left": -284.56, "attrs": {} },
+    { "type": "board-mfrc522", "id": "rfid_exit", "top": 130, "left": -280, "attrs": {} },
+    { "type": "wokwi-servo", "id": "entry_servo", "top": -180, "left": 300, "attrs": {} },
+    { "type": "wokwi-servo", "id": "exit_servo", "top": 55.6, "left": 403.2, "attrs": {} },
     {
       "type": "wokwi-led",
       "id": "entry_led",
       "top": -80,
       "left": 550,
-      "attrs": {
-        "color": "green"
-      }
+      "attrs": { "color": "green" }
     },
     {
       "type": "wokwi-led",
       "id": "exit_led",
       "top": 180,
       "left": 550,
-      "attrs": {
-        "color": "red"
-      }
+      "attrs": { "color": "red" }
+    },
+    { "type": "wokwi-resistor", "id": "r1", "top": -45, "left": 480, "attrs": { "value": "220" } },
+    { "type": "wokwi-resistor", "id": "r2", "top": 215, "left": 480, "attrs": { "value": "220" } },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "passage_entry",
+      "top": 303.8,
+      "left": 297.6,
+      "attrs": { "color": "green", "label": "Entry passage", "bounce": "0" }
     },
     {
-      "type": "wokwi-resistor",
-      "id": "r1",
-      "top": -45,
-      "left": 480,
-      "attrs": {
-        "value": "220"
-      }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "r2",
-      "top": 215,
-      "left": 480,
-      "attrs": {
-        "value": "220"
-      }
+      "type": "wokwi-pushbutton",
+      "id": "passage_exit",
+      "top": 380,
+      "left": 300,
+      "attrs": { "color": "red", "label": "Exit passage", "bounce": "0" }
     }
   ],
   "connections": [
-    [
-      "esp:TX",
-      "$serialMonitor:RX",
-      "",
-      []
-    ],
-    [
-      "esp:RX",
-      "$serialMonitor:TX",
-      "",
-      []
-    ],
-
-    [
-      "esp:18",
-      "rfid_entry:SCK",
-      "green",
-      []
-    ],
-    [
-      "esp:19",
-      "rfid_entry:MISO",
-      "blue",
-      []
-    ],
-    [
-      "esp:23",
-      "rfid_entry:MOSI",
-      "orange",
-      []
-    ],
-    [
-      "esp:5",
-      "rfid_entry:SDA",
-      "yellow",
-      []
-    ],
-    [
-      "esp:22",
-      "rfid_entry:RST",
-      "purple",
-      []
-    ],
-    [
-      "esp:3V3",
-      "rfid_entry:3.3V",
-      "red",
-      []
-    ],
-    [
-      "esp:GND.1",
-      "rfid_entry:GND",
-      "black",
-      []
-    ],
-
-    [
-      "esp:18",
-      "rfid_exit:SCK",
-      "green",
-      []
-    ],
-    [
-      "esp:19",
-      "rfid_exit:MISO",
-      "blue",
-      []
-    ],
-    [
-      "esp:23",
-      "rfid_exit:MOSI",
-      "orange",
-      []
-    ],
-    [
-      "esp:17",
-      "rfid_exit:SDA",
-      "yellow",
-      []
-    ],
-    [
-      "esp:22",
-      "rfid_exit:RST",
-      "purple",
-      []
-    ],
-    [
-      "esp:3V3",
-      "rfid_exit:3.3V",
-      "red",
-      []
-    ],
-    [
-      "esp:GND.1",
-      "rfid_exit:GND",
-      "black",
-      []
-    ],
-
-    [
-      "esp:32",
-      "entry_servo:PWM",
-      "orange",
-      []
-    ],
-    [
-      "esp:5V",
-      "entry_servo:V+",
-      "red",
-      []
-    ],
-    [
-      "esp:GND.1",
-      "entry_servo:GND",
-      "black",
-      []
-    ],
-
-    [
-      "esp:33",
-      "exit_servo:PWM",
-      "orange",
-      []
-    ],
-    [
-      "esp:5V",
-      "exit_servo:V+",
-      "red",
-      []
-    ],
-    [
-      "esp:GND.1",
-      "exit_servo:GND",
-      "black",
-      []
-    ],
-
-    [
-      "esp:25",
-      "r1:1",
-      "green",
-      []
-    ],
-    [
-      "r1:2",
-      "entry_led:A",
-      "green",
-      []
-    ],
-    [
-      "entry_led:C",
-      "esp:GND.1",
-      "black",
-      []
-    ],
-
-    [
-      "esp:26",
-      "r2:1",
-      "red",
-      []
-    ],
-    [
-      "r2:2",
-      "exit_led:A",
-      "red",
-      []
-    ],
-    [
-      "exit_led:C",
-      "esp:GND.1",
-      "black",
-      []
-    ]
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:18", "rfid_entry:SCK", "green", [] ],
+    [ "esp:19", "rfid_entry:MISO", "blue", [ "h91.24", "v201.6", "h-537.6", "v-412.8" ] ],
+    [ "esp:23", "rfid_entry:MOSI", "orange", [] ],
+    [ "esp:5", "rfid_entry:SDA", "yellow", [ "h52.84", "v-48", "h-480", "v-211.2" ] ],
+    [ "esp:22", "rfid_entry:RST", "purple", [] ],
+    [ "esp:3V3", "rfid_entry:3.3V", "red", [ "h-340.61", "v-80.55" ] ],
+    [ "esp:GND.1", "rfid_entry:GND", "black", [ "v-67.2", "h-302.21", "v-182.4" ] ],
+    [ "esp:18", "rfid_exit:SCK", "green", [ "h43.24", "v182.4", "h-470.4", "v-107.35" ] ],
+    [ "esp:19", "rfid_exit:MISO", "blue", [ "h33.64", "v-96", "h-422.4", "v199.85" ] ],
+    [ "esp:23", "rfid_exit:MOSI", "orange", [ "h72.04", "v-48", "h-480", "v199.85" ] ],
+    [ "esp:17", "rfid_exit:SDA", "yellow", [ "h120.04", "v-67.2", "h-494.64" ] ],
+    [ "esp:16", "rfid_exit:RST", "purple", [] ],
+    [ "esp:3V3", "rfid_exit:3.3V", "red", [ "v-19.2", "h-359.81", "v228.65" ] ],
+    [ "esp:GND.1", "rfid_exit:GND", "black", [ "v-172.8", "h-321.41", "v238.25" ] ],
+    [ "esp:32", "entry_servo:PWM", "orange", [] ],
+    [ "esp:5V", "entry_servo:V+", "red", [] ],
+    [ "esp:GND.1", "entry_servo:GND", "black", [] ],
+    [ "esp:33", "exit_servo:PWM", "orange", [ "h-43.01", "v-172.8", "h422.4", "v201.4" ] ],
+    [ "esp:5V", "exit_servo:V+", "red", [] ],
+    [ "esp:GND.1", "exit_servo:GND", "black", [ "v105.6", "h360.19", "v-153.6" ] ],
+    [ "esp:25", "r1:1", "green", [ "h-14.21", "v124.8", "h489.6" ] ],
+    [ "r1:2", "entry_led:A", "green", [] ],
+    [ "entry_led:C", "esp:GND.1", "black", [] ],
+    [ "esp:26", "r2:1", "red", [ "h-43.01", "v28.8", "h518.4" ] ],
+    [ "r2:2", "exit_led:A", "red", [] ],
+    [ "exit_led:C", "esp:GND.1", "black", [ "v27.6", "h-593.8", "v-96" ] ],
+    [ "esp:21", "passage_entry:1.l", "green", [ "h158.44", "v240" ] ],
+    [ "passage_entry:2.r", "esp:GND.1", "black", [] ],
+    [ "esp:27", "passage_exit:1.l", "red", [ "h-52.61", "v153.6", "h348" ] ],
+    [ "passage_exit:2.r", "esp:GND.1", "black", [] ]
   ],
-  "dependencies": {},
-  "serialMonitor": {
-    "display": "always",
-    "collapse": false
-  }
+  "serialMonitor": { "collapse": false, "display": "always" },
+  "dependencies": {}
 }
-

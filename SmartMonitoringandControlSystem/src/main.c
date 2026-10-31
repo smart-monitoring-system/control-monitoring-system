@@ -92,6 +92,155 @@ static void entrance_rfid_task(void *argument)
     }
 }
 
+
+/* ---------------------------------------------------------
+ * PASSAGE CONFIRMATION BUTTONS
+ * --------------------------------------------------------- */
+
+#define ENTRY_PASSAGE_GPIO GPIO_NUM_21
+#define EXIT_PASSAGE_GPIO  GPIO_NUM_27
+
+typedef struct {
+    gpio_num_t gpio;
+    system_direction_t direction;
+    const char *name;
+} passage_button_config_t;
+
+static passage_button_config_t entry_button_config = {
+    .gpio = ENTRY_PASSAGE_GPIO,
+    .direction = DIRECTION_ENTRY,
+    .name = "ENTRY"
+};
+
+static passage_button_config_t exit_button_config = {
+    .gpio = EXIT_PASSAGE_GPIO,
+    .direction = DIRECTION_EXIT,
+    .name = "EXIT"
+};
+
+/* Initialize both buttons with internal pull-up resistors. */
+static esp_err_t passage_buttons_init(void)
+{
+    gpio_config_t config = {
+        .pin_bit_mask =
+            (1ULL << ENTRY_PASSAGE_GPIO) |
+            (1ULL << EXIT_PASSAGE_GPIO),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+
+    return gpio_config(&config);
+}
+
+/* Confirm a pending passage transaction. */
+static void confirm_passage(
+    const passage_button_config_t *button
+)
+{
+    system_snapshot_t snapshot;
+
+    esp_err_t result = controller_get_snapshot(
+        &snapshot,
+        pdMS_TO_TICKS(100)
+    );
+
+    if (result != ESP_OK) {
+        ESP_LOGE(
+            "PASSAGE",
+            "Could not read controller snapshot: %s",
+            esp_err_to_name(result)
+        );
+        return;
+    }
+
+    const pending_passage_t *pending =
+        &snapshot.pending[button->direction];
+
+    if (!pending->active) {
+        ESP_LOGW(
+            "PASSAGE",
+            "%s button pressed, but no passage is pending.",
+            button->name
+        );
+        return;
+    }
+
+    /*
+     * IMPORTANT:
+     * Use the original scan transaction ID here.
+     * The new event gets its own unique event ID.
+     */
+    system_event_t event = {
+        .id = controller_next_event_id(),
+        .type = EVENT_PASSAGE_CONFIRMED,
+        .data.passage = {
+            .transaction_id = pending->transaction_id,
+            .direction = button->direction
+        }
+    };
+
+    result = controller_post_event(
+        &event,
+        pdMS_TO_TICKS(100)
+    );
+
+    if (result != ESP_OK) {
+        ESP_LOGE(
+            "PASSAGE",
+            "Could not submit %s confirmation: %s",
+            button->name,
+            esp_err_to_name(result)
+        );
+        return;
+    }
+
+    ESP_LOGI(
+        "PASSAGE",
+        "%s passage confirmation submitted. Transaction ID=%lu",
+        button->name,
+        (unsigned long)pending->transaction_id
+    );
+}
+
+/* Task for detecting button presses. */
+static void passage_button_task(void *argument)
+{
+    const passage_button_config_t *button =
+        (const passage_button_config_t *)argument;
+
+    ESP_LOGI(
+        "PASSAGE",
+        "%s passage button ready on GPIO%d",
+        button->name,
+        (int)button->gpio
+    );
+
+    while (1) {
+
+        /* Button is active LOW. */
+        if (gpio_get_level(button->gpio) == 0) {
+
+            /* Basic debounce. */
+            vTaskDelay(pdMS_TO_TICKS(30));
+
+            if (gpio_get_level(button->gpio) == 0) {
+
+                confirm_passage(button);
+
+                /* Wait for button release. */
+                while (gpio_get_level(button->gpio) == 0) {
+                    vTaskDelay(pdMS_TO_TICKS(20));
+                }
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(20));
+    }
+}
+
+
 #endif
 
 void app_main(void)
@@ -109,10 +258,41 @@ void app_main(void)
     ESP_LOGI("startup", "Role 2 door outputs initialized.");
 
     ESP_ERROR_CHECK(management_init());
-    ESP_ERROR_CHECK(controller_start());
+    
+ESP_ERROR_CHECK(controller_start());
 
-    ESP_ERROR_CHECK(config_start_watcher());
-    ESP_ERROR_CHECK(serial_cli_start());
+ESP_ERROR_CHECK(config_start_watcher());
+ESP_ERROR_CHECK(serial_cli_start());
+
+/* Initialize passage confirmation buttons. */
+ESP_ERROR_CHECK(passage_buttons_init());
+
+/* Start entrance passage task. */
+if (xTaskCreate(
+        passage_button_task,
+        "entry_passage",
+        3072,
+        &entry_button_config,
+        4,
+        NULL
+    ) != pdPASS) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+}
+
+/* Start exit passage task. */
+if (xTaskCreate(
+        passage_button_task,
+        "exit_passage",
+        3072,
+        &exit_button_config,
+        4,
+        NULL
+    ) != pdPASS) {
+    ESP_ERROR_CHECK(ESP_FAIL);
+}
+
+
+
     /* Add teammates' initialization here when their modules are integrated. */
     ESP_LOGW("startup", "Role 1 only: hardware, management and SD modules are not integrated; console logs are not persisted.");
 #if APP_ROLE1_DEMO
