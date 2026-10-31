@@ -33,7 +33,7 @@ room_counter_result_t room_counter_reconcile_empty(room_counter_t *counter)
     return result;
 }
 
-static room_counter_result_t complete_entry(room_counter_t *counter, uint64_t now_ms)
+static room_counter_result_t complete_entry(room_counter_t *counter)
 {
     if (counter->people_count >= SYSTEM_MAX_USERS) return mark_unknown(counter);
     ++counter->people_count;
@@ -42,12 +42,12 @@ static room_counter_result_t complete_entry(room_counter_t *counter, uint64_t no
         .count_changed = true,
     };
     counter->occupancy = ROOM_OCCUPIED;
-    counter->passage_state = ROOM_PASSAGE_WAIT_CLEAR;
-    counter->passage_started_ms = now_ms;
+    counter->passage_state = ROOM_PASSAGE_IDLE;
+    counter->passage_started_ms = 0;
     return result;
 }
 
-static room_counter_result_t complete_exit(room_counter_t *counter, uint64_t now_ms)
+static room_counter_result_t complete_exit(room_counter_t *counter)
 {
     if (counter->people_count == 0) return mark_unknown(counter);
     --counter->people_count;
@@ -56,8 +56,8 @@ static room_counter_result_t complete_exit(room_counter_t *counter, uint64_t now
         .count_changed = true,
     };
     counter->occupancy = counter->people_count == 0 ? ROOM_EMPTY : ROOM_OCCUPIED;
-    counter->passage_state = ROOM_PASSAGE_WAIT_CLEAR;
-    counter->passage_started_ms = now_ms;
+    counter->passage_state = ROOM_PASSAGE_IDLE;
+    counter->passage_started_ms = 0;
     return result;
 }
 
@@ -69,36 +69,48 @@ room_counter_result_t room_counter_process(room_counter_t *counter,
 
     if (counter->passage_state != ROOM_PASSAGE_IDLE &&
         now_ms - counter->passage_started_ms >= ROOM_CROSSING_TIMEOUT_MS) {
-        /* A turn-back and a person stopped between beams are indistinguishable. */
+        /* Never commit a stalled or only partly observed crossing. */
         return mark_unknown(counter);
     }
 
     switch (counter->passage_state) {
     case ROOM_PASSAGE_IDLE:
-        if (a_rising && b_rising) return mark_unknown(counter);
+        if (a_active && b_active) return mark_unknown(counter);
         if (a_rising) {
             counter->passage_state = ROOM_PASSAGE_WAIT_FOR_B;
             counter->passage_started_ms = now_ms;
         } else if (b_rising) {
             counter->passage_state = ROOM_PASSAGE_WAIT_FOR_A;
             counter->passage_started_ms = now_ms;
+        } else if (a_active || b_active) {
+            return mark_unknown(counter);
         }
         break;
     case ROOM_PASSAGE_WAIT_FOR_B:
-        if (a_rising) return mark_unknown(counter);
-        if (b_rising) return complete_entry(counter, now_ms);
+        if (a_rising || !a_active) return mark_unknown(counter);
+        if (b_rising) counter->passage_state = ROOM_PASSAGE_ENTRY_WAIT_A_CLEAR;
         break;
     case ROOM_PASSAGE_WAIT_FOR_A:
-        if (b_rising) return mark_unknown(counter);
-        if (a_rising) return complete_exit(counter, now_ms);
+        if (b_rising || !b_active) return mark_unknown(counter);
+        if (a_rising) counter->passage_state = ROOM_PASSAGE_EXIT_WAIT_B_CLEAR;
         break;
-    case ROOM_PASSAGE_WAIT_CLEAR:
-        if (!a_active && !b_active) {
-            counter->passage_state = ROOM_PASSAGE_IDLE;
-            counter->passage_started_ms = 0;
-        } else if (a_rising || b_rising) {
-            return mark_unknown(counter);
-        }
+    case ROOM_PASSAGE_ENTRY_WAIT_A_CLEAR:
+        /* A must clear first. B clearing first is an entry turnaround. */
+        if (a_rising || b_rising || !b_active) return mark_unknown(counter);
+        if (!a_active) counter->passage_state = ROOM_PASSAGE_ENTRY_WAIT_B_CLEAR;
+        break;
+    case ROOM_PASSAGE_ENTRY_WAIT_B_CLEAR:
+        if (a_rising || b_rising || a_active) return mark_unknown(counter);
+        if (!b_active) return complete_entry(counter);
+        break;
+    case ROOM_PASSAGE_EXIT_WAIT_B_CLEAR:
+        /* B must clear first. A clearing first is an exit turnaround. */
+        if (a_rising || b_rising || !a_active) return mark_unknown(counter);
+        if (!b_active) counter->passage_state = ROOM_PASSAGE_EXIT_WAIT_A_CLEAR;
+        break;
+    case ROOM_PASSAGE_EXIT_WAIT_A_CLEAR:
+        if (a_rising || b_rising || b_active) return mark_unknown(counter);
+        if (!a_active) return complete_exit(counter);
         break;
     default:
         return mark_unknown(counter);

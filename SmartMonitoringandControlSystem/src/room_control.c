@@ -16,7 +16,7 @@
 /* A is outside and B is inside each room doorway. */
 #define ROOM_1_A_GPIO     GPIO_NUM_34
 #define ROOM_1_B_GPIO     GPIO_NUM_35
-#define ROOM_1_LIGHT_GPIO GPIO_NUM_27
+#define ROOM_1_LIGHT_GPIO GPIO_NUM_13
 #define ROOM_2_A_GPIO     GPIO_NUM_36
 #define ROOM_2_B_GPIO     GPIO_NUM_39
 #define ROOM_2_LIGHT_GPIO GPIO_NUM_14

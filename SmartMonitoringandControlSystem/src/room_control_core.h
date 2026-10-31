@@ -7,7 +7,7 @@
 
 #include "system_types.h"
 
-/* A and B are ordered outside-to-inside: A->B enters, B->A exits. */
+/* Ordered, overlapping beams: A -> A+B -> B -> clear enters; reverse exits. */
 #ifndef ROOM_CROSSING_TIMEOUT_MS
 #define ROOM_CROSSING_TIMEOUT_MS 2000U
 #endif
@@ -16,7 +16,10 @@ typedef enum {
     ROOM_PASSAGE_IDLE = 0,
     ROOM_PASSAGE_WAIT_FOR_B,
     ROOM_PASSAGE_WAIT_FOR_A,
-    ROOM_PASSAGE_WAIT_CLEAR,
+    ROOM_PASSAGE_ENTRY_WAIT_A_CLEAR,
+    ROOM_PASSAGE_ENTRY_WAIT_B_CLEAR,
+    ROOM_PASSAGE_EXIT_WAIT_B_CLEAR,
+    ROOM_PASSAGE_EXIT_WAIT_A_CLEAR,
 } room_passage_state_t;
 
 typedef struct {

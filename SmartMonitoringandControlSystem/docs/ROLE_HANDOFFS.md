@@ -59,8 +59,9 @@ and door commands through integration.h when integrating.
 ## Role 3: both rooms
 
 Implemented in `room_control.c` and `room_control_core.c`. Each room has a
-separate two-beam directional counter: outside beam A followed by inside beam B
-is an entry; B followed by A is an exit. The room task owns this count and its
+separate two-beam directional counter: A only -> both -> B only -> clear is an
+entry; the reverse sequence is an exit. Counts commit only after the final clear
+sample. The room task owns this count and its
 light output, while the pure core is host-tested. See `ROLE3_IMPLEMENTATION.md`
 for GPIO allocation, Wokwi controls, ambiguity handling, and restart recovery.
 
@@ -71,7 +72,8 @@ an input that automatically turns both room lights on.
 
 Doorway-counting must treat reversals, stalls, missed beams and overlapping
 crossings as `UNKNOWN`, never as a guessed count. On restart, a logged-in staff
-member physically checks a clear doorway and runs `rooms reconcile <1|2>` before
+member physically confirms the room is empty and its doorway clear, then runs
+`rooms reconcile <1|2>` before
 the relevant room may be considered empty.
 
 ## Role 4: schedules, auth, configuration, CLI
