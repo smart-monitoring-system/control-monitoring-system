@@ -115,7 +115,7 @@ bool schedule_time_is_set(void)
     return schedule_get_time(&hour, &minute) == ESP_OK;
 }
 
-/* The function the leader's controller calls on every scan, for ENTRY and for EXIT */
+/* The function the controller calls on every scan, for ENTRY and for EXIT */
 esp_err_t schedule_access_allowed(system_direction_t direction, bool *allowed)
 {
     if (allowed == NULL) {
