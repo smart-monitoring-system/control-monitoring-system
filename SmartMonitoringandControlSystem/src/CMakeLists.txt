@@ -15,6 +15,7 @@ idf_component_register(
         "auth.c"
         "config.c"
         "serial_cli.c"
+        "rfid.c"
 
     INCLUDE_DIRS
         "."

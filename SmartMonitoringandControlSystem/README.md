@@ -35,8 +35,10 @@ python3 scripts/test_core.py
 
 - **esp32dev** is the normal baseline. The controller runs, but providers that are
   not implemented return ESP_ERR_NOT_SUPPORTED. Access is denied until identity,
-  schedule, and door integrations are actually connected. No default admin password
-  or permanently open production schedule is installed.
+  schedule, and door integrations are actually connected. The entry MFRC522 scan
+  prints the card UID to the serial monitor and submits it to the controller;
+  access remains denied while the schedule provider is unavailable. No default
+  admin password or permanently open production schedule is installed.
 - **role1_demo** compiles synthetic card identities, a controllable fake schedule,
   fake actuator acceptance, and an automatic event sequence. It prints
   `ROLE1 DEMO PASS` only when the final controller snapshot has the expected state.
@@ -69,8 +71,10 @@ installed PlatformIO esptool package; there are no network dependencies in firmw
 
 ## Wokwi
 
-The initial diagram contains one standard ESP32 and serial connections only.
-It intentionally does not imply that hardware from the other roles is implemented.
+The diagram contains the ESP32, RFID readers, servos, LEDs, and serial connections.
+The normal firmware currently initializes and polls the entry reader only; it holds
+the unused exit reader's chip-select high because both readers share the SPI bus.
+The exit reader and servo outputs still need their firmware integration.
 
 - For normal firmware, use wokwi.toml after building esp32dev.
 - For the synthetic demonstration, select wokwi.demo.toml with the extension's
@@ -82,6 +86,12 @@ It intentionally does not imply that hardware from the other roles is implemente
 - At 115200 baud, the demo should finish after roughly 8-10 simulated seconds.
   The expected final state is Brian (user ID 2) inside, Alice/Carol outside, Room 1
   occupied/light on, Room 2 empty/light off, and no pending access transactions.
+- To test the entry reader, build the `esp32dev` profile, start the simulation with
+  `wokwi.toml`, open the serial monitor at 115200 baud, and tap a card on the entry
+  MFRC522. The monitor prints `RFID ENTRY: UID = ...` once per tap, followed by the
+  controller's decision. Remove the card before tapping it again. A `NOT_READY`
+  decision means the schedule provider is not active; it does not mean the scan
+  failed.
 
 No MQTT broker or multiple tabs are required for the assessed baseline. The old
 cross-tab experiment is separate evidence of a possible future distributed design.
